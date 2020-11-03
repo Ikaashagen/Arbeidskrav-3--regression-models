@@ -1,0 +1,157 @@
+---
+title: "Arbeidskrav 3- regression models"
+author: "Ingvild Kåshagen"
+date: "28 10 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Arbeidskrav 3- Regresjonsmodeller
+
+Denne oppgaven består av to deler.
+Del 1 består av å lage en T-test for å se på sammenhengen mellom tverrsnittsarelet til m.vastus lateralis hos personer som er kategorisert som "high" og "low" responders. Deretter skal vi se på denne sammenhengen ved å bruke en regresjonsmodell. 
+
+Del 2 vil vise sammenhengen medllom tverrsnittarealet til muskelen vastus lateralis ved første test og resultatet ved 3RM knebøy. Sammenhengen vises gjennom regresjonsanalyser. 
+
+
+##Del 1
+I del en ønsker vi å se på sammenhengen mellom hvorvidt forsøkspersonen kategoriseres som en "high" eller "low" responder og tverrsnittareal på m.vastus lateralis ved første test. 
+1. Laste ned nødvendige pakker. 
+2. Laste ned datasett og velge ut aktuelle variabler, fjerne NA.
+3. T- test (Welsch two sample t-test)
+
+#### Laste ned pakker
+
+```{r warning=FALSE, include=FALSE}
+library (tidyverse)
+library (readr)
+library (kableExtra)
+library(nlme)
+```
+
+#### Laste ned datsett
+```{r}
+download.file(url = "https://ndownloader.figstatic.com/files/14702420", destfile = "hypertrophy.csv") 
+
+hypertrophy <- read_csv("hypertrophy.csv")
+
+```
+
+
+#### Velge ut variabler 
+Her har vi valgt ut variablene sub_ID, cluster og AVG_CSA_T1 (cross sectional area av muskel ved test 1), og fjernet na. 
+```{r}
+hyp1 <- hypertrophy %>%
+  select(SUB_ID, CLUSTER, AVG_CSA_T1) %>% #Velge ut variabler
+  filter(!is.na(CLUSTER)) %>% #Fjerne NA
+  print()
+```
+
+### Del 1- T- test og regresjonsanalyse
+#### T-test
+Her har vi brukt en Welch two sample t-test, som sammenligner gjennomsnitt mellom gruppene "high" og "low". Ved å legge til var.equal= TRUE brukes det samlede estimatet for variansen.
+
+```{r var.equal = TRUE}
+t.test(AVG_CSA_T1  ~ CLUSTER, data = hyp1) 
+```
+
+
+### Regresjonsanalyse
+  
+```{r}
+read_csv("hypertrophy.csv", na = "NA") %>%
+        filter(CLUSTER == "pre") %>%
+   select(SUB_ID, AVG_CSA_T1, CLUSTER) %>%
+    filter(!is.na(CLUSTER)) %>%
+  print()
+```
+
+
+```{r}
+reg1 <- lm(AVG_CSA_T1 ~ CLUSTER, data= hyp1) %>%
+print()
+summary(reg1) %>%
+  print()
+
+
+```
+
+
+
+```{r}
+library ("broom")
+library(tidyverse)
+tidy(reg1) %>%
+  kable(col.names= c("", "estimate", "SE", "t-statistic", "p-value"),
+        digits=c (NA, 1,1,2,3)) %>%
+  print()
+```
+```{r}
+lin_mod <- lm(AVG_CSA_T1 ~ CLUSTER, data = hyp1)
+summary(lin_mod)
+```
+
+
+### Regresjonsmodell
+
+```{r}
+library(nlme)
+
+welch_twosample <- t.test(AVG_CSA_T1 ~ CLUSTER, data = hyp1, var.equal = FALSE) %>%
+print()
+
+lin_mod_var <- gls(AVG_CSA_T1 ~ CLUSTER, data = hyp1, na.action = na.exclude, method = "ML") %>%
+
+print()
+
+welch_twosample
+summary(lin_mod_var) %>%
+print()
+
+
+```
+
+### T- test sammenlignet med regresjonsmodell. Konklusjon
+
+##Del 2 Sammenheng muskeltverrsnitt og styrke
+I denne delen av oppgaven ønsker vi å se om det er noen sammenheng mellom muskel vastus lateralis tverrsnitt og resultat fra 3RM knebøy test. Hypotesen vi vil teste er " Kan større muskeltverrsnitt assosieres med et høyere resultat ved test av 3RM knebøy?"
+
+#### Velge ut datavariabler og fjerne NA
+
+```{r}
+strength1 <- hypertrophy %>%
+  select(SUB_ID, CLUSTER, Squat_3RM_kg, AVG_CSA_T1, AVG_CSA_T2) %>% #Velge ut variabler
+  filter(!is.na(CLUSTER)) %>% #Fjerne NA
+  print()
+```
+
+#### Se på sammenheng mellom styrke og muskelvolum tidspunkt.
+Velger ut aktuelle variabler
+
+```{r}
+strength2 <- hypertrophy %>%
+  select(SUB_ID, CLUSTER, Squat_3RM_kg, AVG_CSA_T1) %>%  #velger ut aktuelle variabler
+  filter(!is.na(CLUSTER)) %>%  #fjerne na
+  print()
+
+  Styrke1 <- lm(Squat_3RM_kg ~ AVG_CSA_T1 , data = strength2) %>% #lager regresjonsanalyse
+    print()
+
+plot(Styrke1) %>% #plotter regresjonsmodell
+  summary(Styrke1) %>%  #oppsummering av tabell
+  print()
+
+  confint(Styrke1) %>% #legger til konfidensintervall
+
+  print()
+
+
+```
+
+###Konklusjon
+
+
+
