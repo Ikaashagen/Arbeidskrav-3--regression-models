@@ -1,0 +1,93 @@
+---
+title: "Arbeidskrav3"
+author: "Benedicte"
+date: "10/28/2020"
+output: html_document
+---
+
+### Laste ned pakker 
+
+```{r}
+library(tidyverse)
+library(broom)
+library(readr)
+library(kableExtra)
+library(nlme)
+```
+
+###Importere data 
+
+```{r}
+
+
+download.file(url = "https://ndownloader.figstatic.com/files/14702420", destfile = "hypertrophy1.csv")
+
+hypertrophy1 <- read_csv("hypertrophy1.csv")
+
+```
+
+###Selektere variabler
+```{r}
+hyp1 <- hypertrophy1 %>%
+  select(SUB_ID, CLUSTER, AVG_CSA_T1) %>%
+  filter(!is.na(CLUSTER)) %>%
+  print()
+  
+  
+```
+
+### Gjennomføre t-test 
+```{r var.equal= TRUE}
+t.test(AVG_CSA_T1  ~ CLUSTER, data = hyp1)
+
+```
+
+###Regresjonsanalyse 
+
+```{r}
+library(readxl); library(tidyverse)
+
+read_csv("hypertrophy1.csv", na = "NA") %>%
+  filter(CLUSTER == "pre") %>%
+  select(SUB_ID, CLUSTER, AVG_CSA_T1) %>%
+ ggplot(aes(AVG_CSA_T1,SUB_ID, CLUSTER)) + geom_point(size=3, fill = "lightblue", shape =21) + geom_smooth(method = "lm")
+  labs(x = "CLUSTER" "SUB_ID"
+       y = expression("AVG_CSA_T1"))) 
+
+  theme_minimal()
+
+  m1 <- lm(CLUSTER ~ AVG_CSA_T1, data = hypertrophy1)
+  
+```
+
+```{r}
+reg1 <- lm(AVG_CSA_T1 ~ CLUSTER, data =hyp1) %>%
+print()
+
+summary(reg1)
+
+```
+
+
+```{r}
+tidy(reg1) %>% 
+  kable(col.names =c("", "Estimate", "SE", "t-statistic", "p-value"),
+        digits = c(NA, 1, 1, 2, 3)) %>%
+  print()
+
+```
+
+```{r}
+welch_twosample <- t.test(AVG_CSA_T1 ~ CLUSTER, data = hyp1, var.equal = FALSE) %>%
+print()
+
+lin_mod_var <- gls(AVG_CSA_T1 ~ CLUSTER, data = hyp1) %>% 
+  print()
+welch_twosample
+summary(lin_mod_var) %>%
+  print()
+
+
+```
+
+
